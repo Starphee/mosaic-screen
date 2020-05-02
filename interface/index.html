@@ -17,8 +17,10 @@
       <button id="stop" class="is-pulled-right"></button>
       <button id="rotate" class="is-pulled-right"></button>
       <h1 class="title">Dorian's Mosaic</h1>
-      <p class="subtitle">
-      </p>
+      <div>
+        <label for="brightness">Brightness</label>
+        <input type="range" id="brightness" min="0" max="254" value="100">
+      </div>
     </div>
   </div>
 </section>
@@ -73,6 +75,11 @@
 
   $('#rotate').click(() => {
     post('rotate', 5);
+  });
+
+  // Bind Brightness Slider.
+  $('#brightness').change(() => {
+    axios.post('bright', {brightness: $('#brightness').val()});
   });
 
   const colors = [
