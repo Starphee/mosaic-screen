@@ -2,6 +2,15 @@ body {
   font-family: sans-serif;
 }
 
+body, .box {
+  background-color: rgb(53, 53, 53);
+  color: white;
+}
+
+.box label {
+  color: white;
+}
+
 button {
   min-width: 100px;
   height: 100px;
