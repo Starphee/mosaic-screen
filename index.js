@@ -122,7 +122,7 @@ function rotateModes(seconds) {
 
 
 // Add custom scrolling text from left to right.
-function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 2 }) {
+function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 2, baseline = 0 }) {
   ctx.fillStyle = color;
   ctx.font = `${size}px ${font}`;
   text = text.split('').join(String.fromCharCode(8202));
@@ -135,7 +135,7 @@ function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 
   let x = width;
 
   // Center height.
-  let y = 10;
+  let y = 10 + baseline;
   return setInterval(() => {
     x = x - speed / 5; // Move to the left.
 
