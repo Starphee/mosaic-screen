@@ -22,8 +22,10 @@ Teensy, still works great):
 #define LED_COUNT 225
 
 int pixel = 0;
+int lastPixel = 0;
 int counter = 0;
-int bright = 125;
+int bright = 100;
+bool setBright = false;
 
 // Declare our NeoPixel strip object:
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -52,19 +54,31 @@ void loop() {
   while (Serial.available()) {
     pixel = Serial.read();
     if (pixel == 255) {
-      // New frame! Display the last one, reset counter.
-      strip.show();
-      counter = 0;
-    } else {
-      uint32_t color = strip.Color((pixel >> 5) * 32, ((pixel & 28) >> 2) * 32, (pixel & 3) * 64, bright);
-      strip.setPixelColor(counter, color);
-      counter++;
-
-      // Sane byte overflow protection.
-      if (counter > strip.numPixels() - 1) {
+      if (lastPixel == 255) {
+        // Trying to set the brightness!
+        setBright = true;
+      } else {
+        // New frame! Display the last one, reset counter.
+        strip.show();
         counter = 0;
       }
+    } else {
+      if (setBright) {
+        bright = pixel;
+        setBright = false;
+        strip.setBrightness(bright);
+      } else {
+        uint32_t color = strip.Color((pixel >> 5) * 32, ((pixel & 28) >> 2) * 32, (pixel & 3) * 64, bright);
+        strip.setPixelColor(counter, color);
+        counter++;
+
+        // Sane byte overflow protection.
+        if (counter > strip.numPixels() - 1) {
+          counter = 0;
+        }
+      }
     }
+    lastPixel = pixel;
   }
 }
 ```
