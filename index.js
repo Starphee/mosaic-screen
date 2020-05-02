@@ -13,6 +13,7 @@ const END_FRAME = 255;
 const FRAME_RATE = 60; // In Frame updates per second
 const width = 15;
 const height = 15;
+let brightFrame = null;
 const serverPort = 80;
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext('2d', { antialias: 'none' })
@@ -317,8 +318,29 @@ function HSVtoRGB(h, s, v) {
 // =============== Init Serial connection and frame sending ====================
 // =============================================================================
 
+// Set the brightness of the pixels on the arduino with a byte sequence.
+function setBrightness(level) {
+  let bLevel = parseInt(level, 10);
+  bLevel = bLevel > 254 ? 254 : bLevel;
+  bLevel = bLevel < 0 ? 0 : bLevel;
+
+  brightFrame = [
+    END_FRAME,
+    END_FRAME,
+    bLevel,
+  ];
+}
+
 // Weave through all pixels on the canvas and generate a byte array for writing.
 function getFrameData() {
+
+  // Override get frame to set brightness when it exists.
+  if (brightFrame) {
+    const temp = [...brightFrame];
+    brightFrame = null;
+    return temp;
+  }
+
   // Get RGBA array of data
   const imageData = ctx.getImageData(0, 0, width, height).data;
   const bytes = [];
@@ -417,5 +439,10 @@ app.get('/data', (req, res) => {
 
 app.post('/data', (req, res) => {
   const change = changeScreen(req.body);
+  res.send({status: 'ok'});
+});
+
+app.post('/bright', (req, res) => {
+  setBrightness(req.body.brightness);
   res.send({status: 'ok'});
 });
