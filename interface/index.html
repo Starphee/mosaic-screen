@@ -57,6 +57,15 @@
 
 <div class="box">
   <label class="label">
+    <span>Solid Color:</span>
+  </label>
+  <div class="field" id="color">
+    <input type="color" value="#0000ff">
+  </div>
+</div>
+
+<div class="box">
+  <label class="label">
     <span>Power:</span>
   </label>
   <div class="field" id="power">
@@ -77,6 +86,11 @@
 
   $('#rotate').click(() => {
     post('rotate', 5);
+  });
+
+  // Bind solid color change.
+  $('#color input').change(() => {
+    post('color', $('#color input').val());
   });
 
   // Bind Brightness Slider.
