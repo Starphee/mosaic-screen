@@ -30,6 +30,7 @@ const appData = {
     skeleton: { fps: 8 },
     pickaxe: { fps: 5 },
     nyan: { fps: 5 },
+    maker: { fps: 8 },
   },
 };
 
@@ -104,7 +105,7 @@ function rotateModes(seconds) {
   const options = [
     { image: 'heart' }, { image: 'bird' }, { image: 'eye' }, { image: 'flower' },
     { image: 'fire' }, { image: 'pumpkin' }, { image: 'skeleton' },
-    { image: 'pickaxe' }, { image: 'nyan' },
+    { image: 'pickaxe' }, { image: 'nyan' }, { image: 'maker' },
 
     { plasma: true }, { plasma: true }, { plasma: true }, { plasma: true },
   ];
