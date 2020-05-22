@@ -71,6 +71,9 @@ function runScreen(change) {
     } else if (change.scroll) {
       // Scroll text!
       done(scrollText(change.scroll));
+    } else if (change.color) {
+      // Solid color!
+      done(changeColor(change.color));
     } else if (change.plasma) {
       // Magic rainbow plasma
       done(plasma());
@@ -241,6 +244,13 @@ function hostPower(option) {
 
     countdown--;
   }, 1000);
+}
+
+// Change solid color.
+function changeColor(color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return 0;
 }
 
 // Run the random plasma animation at 60fps.
