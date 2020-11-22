@@ -14,7 +14,7 @@ const FRAME_RATE = 60; // In Frame updates per second
 const width = 15;
 const height = 15;
 let brightFrame = null;
-const serverPort = 4242;
+const serverPort = 80;
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d", { antialias: "none" });
 
