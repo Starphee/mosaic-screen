@@ -14,7 +14,7 @@ const FRAME_RATE = 60; // In Frame updates per second
 const width = 15;
 const height = 15;
 let brightFrame = null;
-const serverPort = 80;
+const serverPort = 4242;
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d", { antialias: "none" });
 
@@ -74,9 +74,12 @@ function runScreen(change) {
     } else if (change.color) {
       // Solid color!
       done(changeColor(change.color));
+    } else if (change.clock) {
+      // Clock!
+      done(changeClock(change.clock));
     } else if (change.plasma) {
       // Magic rainbow plasma
-      done(plasma());
+      done(plasma(change.plasma));
     } else if (change.power) {
       // Shut down/restart!
       done(hostPower(change.power));
@@ -97,6 +100,44 @@ const getRand = (max, exclude) => {
   }
   return picked;
 };
+
+// Draw a clock with a color.
+function drawClock(color) {
+  const time = new Date();
+  const minutes = time.getMinutes();
+  let PM = " ";
+  let hours = time.getHours();
+  if (hours > 12) {
+    hours = hours - 12;
+    PM = ".";
+  }
+
+  if (hours === 0) {
+    hours = 12;
+  }
+
+  ctx.fillStyle = color;
+  ctx.font = `8px Minecraftia`;
+  ctx.fillText(`${hours}`, 1, 12);
+
+  ctx.fillStyle = color;
+  ctx.font = `8px Minecraftia`;
+  ctx.fillText(`${minutes}${PM}`.padStart(3, "0"), 1, 20);
+}
+
+// Clock mode!
+function changeClock({ color = "red" }) {
+  let counter = 0;
+
+  // Dont Repeat Yourself
+  function clockLoop() {
+    clearScreen();
+    drawClock(color);
+  }
+  clockLoop();
+
+  return setInterval(clockLoop, 1000);
+}
 
 // Rotation mode.
 function rotateModes(seconds) {
@@ -269,17 +310,13 @@ function changeColor(color) {
 }
 
 // Run the random plasma animation at 60fps.
-function plasma() {
+function plasma({ withClock = false, flipClock = false }) {
   var w = canvas.width;
   var h = canvas.height;
 
   var buffer = new Array(h);
 
-  const mod = [
-    Math.random() * 64,
-    Math.random() * 64,
-    Math.random() * 64,
-  ];
+  const mod = [Math.random() * 64, Math.random() * 64, Math.random() * 64];
 
   for (var y = 0; y < h; y++) {
     buffer[y] = new Array(w);
@@ -298,18 +335,33 @@ function plasma() {
   var hueShift = 0;
 
   return setInterval(() => {
+    if (withClock) {
+      clearScreen();
+      drawClock("white");
+    }
+
     var img = ctx.getImageData(0, 0, w, h);
     for (var y = 0; y < h; y++) {
       for (var x = 0; x < w; x++) {
-        var hue = hueShift + plasma[y][x] % 1;
+        var hue = hueShift + (plasma[y][x] % 1);
         var rgb = HSVtoRGB(hue, plasma[y][x], plasma[y][x]);
         var pos = (y * w + x) * 4;
         img.data[pos] = rgb.r;
         img.data[pos + 1] = rgb.g;
         img.data[pos + 2] = rgb.b;
         img.data[pos + 3] = 255;
+
+        // Erase pixels to black that aren't filled.
+        if (withClock) {
+          if (!!ctx.getImageData(x, y, 1, 1).data[0] == flipClock) {
+            img.data[pos] = 0;
+            img.data[pos + 1] = 0;
+            img.data[pos + 2] = 0;
+          }
+        }
       }
     }
+
     ctx.putImageData(img, 0, 0);
     hueShift = (hueShift + 0.01) % 1;
   }, Math.round(1000 / 60));

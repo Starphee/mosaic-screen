@@ -7,6 +7,7 @@
   <title>Dorian's Mosaic Controller</title>
   <script src="/jquery/jquery.min.js"></script>
   <script src="/axios/axios.min.js"></script>
+  <script src="/iro/iro.min.js"></script>
   <link rel="stylesheet" href="/bulma/bulma.min.css">
   <link rel="stylesheet" href="interface.css">
 </head>
@@ -40,9 +41,19 @@
     <span>Bouncy Ball:</span>
   </label>
   <div class="field" id="balls">
-
+    <div class="picker"></div>
   </div>
 </div>
+
+<div class="box">
+  <label class="label">
+    <span>Clock:</span>
+  </label>
+  <div class="field" id="clock">
+    <div class="picker"></div>
+  </div>
+</div>
+
 
 <div class="box">
   <label class="label">
@@ -52,6 +63,7 @@
     <label for="speed">Speed:</label>
     <input type="range" id="speed" min="1" max="5" value="2">
     <input type="text" id="text-input" value="Sample text">
+    <div class="picker"></div>
   </div>
 </div>
 
@@ -59,8 +71,8 @@
   <label class="label">
     <span>Solid Color:</span>
   </label>
-  <div class="field" id="color">
-    <input type="color" value="#0000ff">
+  <div class="field" id="solid">
+    <div class="picker"></div>
   </div>
 </div>
 
@@ -89,49 +101,39 @@
   });
 
   // Bind solid color change.
-  $('#color input').change(() => {
-    post('color', $('#color input').val());
+  const solidColor = new iro.ColorPicker('#solid .picker');
+  solidColor.on('color:change', function (color) {
+    post('color', color.hexString);
+  });
+
+  // Bind clock color change.
+  const clockColor = new iro.ColorPicker('#clock .picker');
+  clockColor.on('color:change', function (color) {
+    post('clock', { color: color.hexString });
+  });
+
+  // Bind bouncy ball.
+  const ballColor = new iro.ColorPicker('#balls .picker');
+  ballColor.on('color:change', function (color) {
+    post('ball', color.hexString);
+  });
+
+  // Bind scrolling text mode.
+  const textColor = new iro.ColorPicker('#text .picker');
+  textColor.on('color:change', function (color) {
+    post('scroll', {
+      text: $('#text-input').val(),
+      size: 8,
+      speed: $('#speed').val(),
+      font: 'Minecraftia',
+      baseline: 6,
+      color: color.hexString,
+    });
   });
 
   // Bind Brightness Slider.
   $('#brightness').change(() => {
     axios.post('bright', {brightness: $('#brightness').val()});
-  });
-
-  const colors = [
-    'purple',
-    'blue',
-    'green',
-    'red',
-    'yellow',
-    'white',
-  ];
-
-  colors.forEach((color) => {
-    $('#balls').append(
-      $('<button>')
-        .text(color)
-        .css('background-color', color)
-        .click(() => {
-          post('ball', color);
-        })
-    );
-
-    $('#text').append(
-      $('<button>')
-        .text(color)
-        .css('background-color', color)
-        .click(() => {
-          post('scroll', {
-            text: $('#text-input').val(),
-            size: 8,
-            speed: $('#speed').val(),
-            font: 'Minecraftia',
-            baseline: 6,
-            color,
-          });
-        })
-    );
   });
 
   // Add power options
@@ -161,8 +163,16 @@
     $('#images').append(
       $('<button>')
         .attr('id', 'plasma')
-        .click(() => {post('plasma')})
-        .text('Plasma!')
+        .click(() => {post('plasma', {})})
+        .text('Plasma!'),
+      $('<button>')
+        .attr('style', `background-image: url("/images/plasma.gif")`)
+        .click(() => {post('plasma', {withClock: true})})
+        .text("PClock"),
+      $('<button>')
+        .attr('style', `background-image: url("/images/plasma.gif")`)
+        .click(() => {post('plasma', {withClock: true, flipClock: true})})
+        .text("!PClock")
     );
 
   });
