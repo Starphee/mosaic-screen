@@ -1,11 +1,11 @@
 /**
  * @file Main file for Mosaic Screen! Your friendly neopixel screen controller
  */
-const { createCanvas, loadImage } = require('canvas')
-const SerialPort = require('serialport');
-const { exec } = require('child_process');
+const { createCanvas, loadImage } = require("canvas");
+const SerialPort = require("serialport");
+const { exec } = require("child_process");
 const options = {
-  port: '/dev/ttyACM0',
+  port: "/dev/ttyACM0",
   baudRate: 115200,
 };
 
@@ -16,7 +16,7 @@ const height = 15;
 let brightFrame = null;
 const serverPort = 80;
 const canvas = createCanvas(width, height);
-const ctx = canvas.getContext('2d', { antialias: 'none' })
+const ctx = canvas.getContext("2d", { antialias: "none" });
 
 const appData = {
   images: {
@@ -35,11 +35,10 @@ const appData = {
 };
 
 // Server stuff
-const express = require('express');
-const http = require('http');
+const express = require("express");
+const http = require("http");
 const app = express();
 const httpServer = http.createServer(app);
-
 
 // CONTROL API: ===============================================================
 let currentInterval = null; // Interval for the currently running mode
@@ -103,11 +102,21 @@ const getRand = (max, exclude) => {
 function rotateModes(seconds) {
   let lastPick = null;
   const options = [
-    { image: 'heart' }, { image: 'bird' }, { image: 'eye' }, { image: 'flower' },
-    { image: 'fire' }, { image: 'pumpkin' }, { image: 'skeleton' },
-    { image: 'pickaxe' }, { image: 'nyan' }, { image: 'maker' },
+    { image: "heart" },
+    { image: "bird" },
+    { image: "eye" },
+    { image: "flower" },
+    { image: "fire" },
+    { image: "pumpkin" },
+    { image: "skeleton" },
+    { image: "pickaxe" },
+    { image: "nyan" },
+    { image: "maker" },
 
-    { plasma: true }, { plasma: true }, { plasma: true }, { plasma: true },
+    { plasma: true },
+    { plasma: true },
+    { plasma: true },
+    { plasma: true },
   ];
 
   const pickNext = () => {
@@ -124,12 +133,18 @@ function rotateModes(seconds) {
   return setInterval(pickNext, seconds * 1000);
 }
 
-
 // Add custom scrolling text from left to right.
-function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 2, baseline = 0 }) {
+function scrollText({
+  color = "blue",
+  text,
+  size = "9",
+  font = "Arial",
+  speed = 2,
+  baseline = 0,
+}) {
   ctx.fillStyle = color;
   ctx.font = `${size}px ${font}`;
-  text = text.split('').join(String.fromCharCode(8202));
+  text = text.split("").join(String.fromCharCode(8202));
   const textSize = ctx.measureText(text);
 
   // Buffer off the right of the text, gives screen a break, in pixels.
@@ -149,7 +164,6 @@ function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 
     if (x < -(textSize.width + buffer)) {
       x = width;
     }
-
   }, Math.round(1000 / 30));
 }
 
@@ -157,26 +171,26 @@ function scrollText({ color = 'blue', text, size = '9', font = 'Arial', speed = 
 function ballBounce(color) {
   var p = { x: 5, y: 5 };
   var velo = 0.1,
-      corner = 50,
-      rad = 1;
+    corner = 50,
+    rad = 1;
   var ball = { x: p.x, y: p.y };
-  var moveX = Math.cos(Math.PI / 180 * corner) * velo;
-  var moveY = Math.sin(Math.PI / 180 * corner) * velo;
+  var moveX = Math.cos((Math.PI / 180) * corner) * velo;
+  var moveY = Math.sin((Math.PI / 180) * corner) * velo;
 
   function DrawMe() {
-      clearScreen();
+    clearScreen();
 
-      if (ball.x > canvas.width - rad || ball.x < rad) moveX = -moveX;
-      if (ball.y > canvas.height - rad || ball.y < rad) moveY = -moveY;
+    if (ball.x > canvas.width - rad || ball.x < rad) moveX = -moveX;
+    if (ball.y > canvas.height - rad || ball.y < rad) moveY = -moveY;
 
-      ball.x += moveX;
-      ball.y += moveY;
+    ball.x += moveX;
+    ball.y += moveY;
 
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.arc(ball.x, ball.y, rad, 0, Math.PI * 2, false);
-      ctx.fill();
-      ctx.closePath();
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(ball.x, ball.y, rad, 0, Math.PI * 2, false);
+    ctx.fill();
+    ctx.closePath();
   }
   return setInterval(DrawMe, 10);
 }
@@ -189,7 +203,7 @@ function clearScreen() {
 // Animate a horizontal sprite sheet image over 15px square.
 function animImage(name) {
   if (!appData.images[name]) {
-    name = 'fire';
+    name = "fire";
   }
 
   const { fps } = appData.images[name];
@@ -217,15 +231,15 @@ function animImage(name) {
 function hostPower(option) {
   let countdown = 5 + 4;
   // Safety measure: unless we're running as root, these will just fail.
-  const cmd = option === 'shutdown' ? '/sbin/shutdown -h now' : '/sbin/reboot';
+  const cmd = option === "shutdown" ? "/sbin/shutdown -h now" : "/sbin/reboot";
 
   return setInterval(() => {
     clearScreen();
     if (countdown > 5) {
       if (countdown % 2) {
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = "red";
         ctx.lineWidth = 0.5;
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = "red";
         ctx.fillRect(6, 7, 2, 7);
         ctx.beginPath();
         ctx.arc(7, 7, 6, 0, Math.PI * 2, true);
@@ -311,17 +325,29 @@ function HSVtoRGB(h, s, v) {
   q = v * (1 - f * s);
   t = v * (1 - (1 - f) * s);
   switch (i % 6) {
-    case 0: r = v, g = t, b = p; break;
-    case 1: r = q, g = v, b = p; break;
-    case 2: r = p, g = v, b = t; break;
-    case 3: r = p, g = q, b = v; break;
-    case 4: r = t, g = p, b = v; break;
-    case 5: r = v, g = p, b = q; break;
+    case 0:
+      (r = v), (g = t), (b = p);
+      break;
+    case 1:
+      (r = q), (g = v), (b = p);
+      break;
+    case 2:
+      (r = p), (g = v), (b = t);
+      break;
+    case 3:
+      (r = p), (g = q), (b = v);
+      break;
+    case 4:
+      (r = t), (g = p), (b = v);
+      break;
+    case 5:
+      (r = v), (g = p), (b = q);
+      break;
   }
   return {
     r: Math.round(r * 255),
     g: Math.round(g * 255),
-    b: Math.round(b * 255)
+    b: Math.round(b * 255),
   };
 }
 
@@ -335,16 +361,11 @@ function setBrightness(level) {
   bLevel = bLevel > 254 ? 254 : bLevel;
   bLevel = bLevel < 0 ? 0 : bLevel;
 
-  brightFrame = [
-    END_FRAME,
-    END_FRAME,
-    bLevel,
-  ];
+  brightFrame = [END_FRAME, END_FRAME, bLevel];
 }
 
 // Weave through all pixels on the canvas and generate a byte array for writing.
 function getFrameData() {
-
   // Override get frame to set brightness when it exists.
   if (brightFrame) {
     const temp = [...brightFrame];
@@ -358,20 +379,22 @@ function getFrameData() {
   const rowWidth = width * 4;
   for (let index = 0; index < width * height * 4; index = index + 4) {
     let offset = index;
-    let row = Math.floor((index / 4) / width);
+    let row = Math.floor(index / 4 / width);
 
     // Even rows need to be read backwards
     if (row & 1) {
-      const rowStart = (rowWidth * row);
+      const rowStart = rowWidth * row;
       const rowEnd = rowStart + rowWidth;
       offset = rowStart + (rowEnd - index - 4);
     }
 
-    bytes.push(rgbToByte([
-      imageData[offset],
-      imageData[offset + 1],
-      imageData[offset + 2],
-    ]));
+    bytes.push(
+      rgbToByte([
+        imageData[offset],
+        imageData[offset + 1],
+        imageData[offset + 2],
+      ])
+    );
   }
   bytes.push(END_FRAME);
   return bytes;
@@ -379,7 +402,8 @@ function getFrameData() {
 
 // Flatten any RGB byte triplet into a single 255 color byte.
 function rgbToByte([r, g, b]) {
-  const byte = (Math.floor((r / 32)) << 5) + (Math.floor((g / 32)) << 2) + Math.floor((b / 64));
+  const byte =
+    (Math.floor(r / 32) << 5) + (Math.floor(g / 32) << 2) + Math.floor(b / 64);
   // return the byte, reserving the highest bit for frame marking.
   return byte === 255 ? 254 : byte;
 }
@@ -399,15 +423,15 @@ function sendFrame(port) {
 try {
   port = new SerialPort(options.port, options, (err) => {
     if (!err) {
-      console.log('Connected!');
+      console.log("Connected!");
 
       sendFrame(port);
 
       // Start an animation to show it's on.
-      changeScreen({ ball: 'white' });
+      changeScreen({ ball: "white" });
 
-      port.on('close', (err) => {
-        console.error('Closed!', err);
+      port.on("close", (err) => {
+        console.error("Closed!", err);
         process.exit(1);
       });
     } else {
@@ -423,37 +447,34 @@ try {
 // =============================================================================
 // ======================== Setup Server Endpoint ==============================
 // =============================================================================
-httpServer.listen(
-  serverPort,
-  null,
-  () => {
-    // Properly close down server on fail/close
-    process.on('SIGTERM', (err) => {
-      httpServer.close();
-    });
-  }
-);
-app.use('/', express.static('./interface/'));
+httpServer.listen(serverPort, null, () => {
+  // Properly close down server on fail/close
+  process.on("SIGTERM", (err) => {
+    httpServer.close();
+  });
+});
+app.use("/", express.static("./interface/"));
 
 const nm = `./node_modules`;
-app.use('/bulma', express.static(`${nm}/bulma/css/`));
-app.use('/jquery', express.static(`${nm}/jquery/dist/`));
-app.use('/axios', express.static(`${nm}/axios/dist/`));
-app.use('/images', express.static(`./images/`));
+app.use("/bulma", express.static(`${nm}/bulma/css/`));
+app.use("/iro", express.static(`${nm}/@jaames/iro/dist/`));
+app.use("/jquery", express.static(`${nm}/jquery/dist/`));
+app.use("/axios", express.static(`${nm}/axios/dist/`));
+app.use("/images", express.static(`./images/`));
 app.use(express.json());
 
 // Setup single I/O endpoint
-app.get('/data', (req, res) => {
-  res.set('Content-Type', 'application/json; charset=UTF-8');
+app.get("/data", (req, res) => {
+  res.set("Content-Type", "application/json; charset=UTF-8");
   res.send(appData);
 });
 
-app.post('/data', (req, res) => {
+app.post("/data", (req, res) => {
   const change = changeScreen(req.body);
-  res.send({status: 'ok'});
+  res.send({ status: "ok" });
 });
 
-app.post('/bright', (req, res) => {
+app.post("/bright", (req, res) => {
   setBrightness(req.body.brightness);
-  res.send({status: 'ok'});
+  res.send({ status: "ok" });
 });
