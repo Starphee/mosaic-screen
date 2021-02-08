@@ -33,6 +33,14 @@ button {
   width: 100%;
 }
 
+#schedule button {
+  font-weight: normal;
+  font-size: 1.5em;
+  width: 4em;
+  padding: 0em;
+  margin: 0;
+}
+
 #text input {
   width: 100%;
   margin-bottom: 1em;

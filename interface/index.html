@@ -26,11 +26,38 @@
   </div>
 </section>
 
+<div class="box is-dark">
+  <label class="label">
+    <span>Schedule:</span>
+  </label>
+  <div class="field" id="schedule">
+    <table class="table is-dark">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Mode</th>
+          <th>Brightness</th>
+          <th>Options</th>
+          <th>Op</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td><input type="time" step="60"></input></td>
+          <td colspan="3">Current State</td>
+          <td><button class="button is-success">+</button></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
 <div class="box">
   <label class="label">
     <span>Animations:</span>
   </label>
-  <div class="field" id = "images">
+  <div class="field" id="images">
     Images...
   </div>
 </div>
@@ -147,13 +174,72 @@
     );
   });
 
+  function toAMPM(time) {
+    const t = time.split(':');
+    let h = parseInt(t[0], 10);
+    let m = t[1];
+    let mer = 'A';
+
+    if (h > 12) {
+      h = h - 12;
+      mer = 'P'
+    }
+
+    return `${h}:${m} ${mer}M`;
+  }
+
+  // Get schedule options.
+  function buildSchedule({ data: schedule }) {
+    $('#schedule tbody').empty();
+    Object.entries(schedule).forEach(([time, entry]) => {
+      $('#schedule tbody').append(
+        $('<tr>').append(
+          $('<td>').text(toAMPM(time)),
+          $('<td>').text(entry.mode),
+          $('<td>').text(entry.brightness),
+          $('<td>').text(JSON.stringify(entry.options)),
+          $('<td>').append(
+            $('<button>')
+              .addClass('button is-secondary is-small')
+              .text('👁️')
+              .click(() => {
+                axios.put(`schedule/${time}`);
+              }),
+            $('<button>')
+              .addClass('button is-primary is-small')
+              .text('🔄')
+              .click(() => {
+                axios.post(`schedule`, { time }).then(buildSchedule);
+              }),
+            $('<button>')
+              .addClass('button is-danger is-small')
+              .text('🗑️')
+              .click(() => {
+                axios.delete(`schedule/${time}`).then(buildSchedule);
+              })
+          )
+        )
+      );
+    });
+  }
+
+  // Get initial schedule, bind buttons.
+  axios.get('schedule').then(buildSchedule);
+  $('#schedule tfoot button').click(() => {
+    axios.post(`schedule`, {
+      time: $('#schedule tfoot input').val(),
+    }).then(buildSchedule);
+  });
+
+  
+
   // Get the images.
   axios.get('data').then(({ data }) => {
     $('#images').empty();
-    Object.keys(data.images).forEach((name) => {
+    Object.entries(data.images).forEach(([name, { fps }]) => {
       $('#images').append(
         $('<button>')
-          .attr('style', `background-image: url("/images/${name}.gif")`)
+          .attr('style', `background-image: url("/images/animations/${name}_${fps}.gif")`)
           .text(name)
           .click(() => {post('image', name)})
       );

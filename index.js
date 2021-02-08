@@ -2,7 +2,10 @@
  * @file Main file for Mosaic Screen! Your friendly neopixel screen controller
  */
 const { createCanvas, loadImage } = require("canvas");
+const fs = require('fs');
+const path = require('path');
 const SerialPort = require("serialport");
+const { _extend } = require('util');
 const { exec } = require("child_process");
 const options = {
   port: "/dev/ttyACM0",
@@ -11,13 +14,26 @@ const options = {
 
 const END_FRAME = 255;
 const FRAME_RATE = 60; // In Frame updates per second
+const FRAME_RATE_TIME = Math.round(1000 / FRAME_RATE);
 const animPath = path.join(__dirname, 'images', 'animations');
 const width = 15;
 const height = 15;
 let brightFrame = null;
-const serverPort = 80;
+const serverPort = 4242;
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d", { antialias: "none" });
+
+// Manage state.
+// Initial values here represent default startup state.
+const globalState = {
+  brightness: 10,
+  mode: 'ball',
+  options: 'red',
+};
+
+// Object of schedule items keyed by time.
+const scheduleFile = './schedule.json';
+let schedule = {};
 
 const appData = {
   images: {}, // Loaded dynamically.
@@ -53,9 +69,96 @@ function changeScreen(change) {
   });
 }
 
+// Get Time Helper.
+function getTime() {
+  const time = new Date();
+  const hours = `${time.getHours()}`.padStart(2, '0');
+  const mins = `${time.getMinutes()}`.padStart(2, '0');
+  return `${hours}:${mins}`;
+}
+
+// Set State Helper
+function updateStateFromChange(change) {
+  const key = Object.keys(change)[0];
+
+  if (key) {
+    globalState.mode = key;
+    globalState.options = change[key];
+  }
+}
+
+// Set Brightness State helper
+function updateStateBrightness(level) {
+  globalState.brightness = level;
+}
+
+// Setup the schedule global array from the JSON file.
+function readSchedule() {
+  let data = {};
+  if (fs.existsSync(scheduleFile)) {
+    try {
+      data = JSON.parse(fs.readFileSync(scheduleFile));
+    } catch (error) {
+      console.error(`Problem loading schedule JSON file:`, error);
+    }
+  }
+
+  schedule = data;
+  writeSchedule();
+}
+
+// Write the whole schedule out.
+function writeSchedule() {
+  const times = Object.keys(schedule).sort();
+  const newSchedule = {};
+  times.forEach(time => newSchedule[time] = schedule[time]);
+  schedule = newSchedule;
+  fs.writeFileSync(scheduleFile, JSON.stringify(schedule, null, 2));
+}
+
+// Add to the schedule with a time
+function addScheduleState(time) {
+  if (!time) time = getTime();
+  schedule[time] = _extend({}, globalState);
+  writeSchedule();
+}
+
+// Remove from the schedule.
+function removeSchedule(time) {
+  if (schedule[time]) {
+    delete schedule[time];
+    writeSchedule();
+  }
+}
+
+// Set the brightness and mode froma state object.
+function setFromState({ brightness, mode, options}) {
+  // Set Brightness.
+  setBrightness(brightness);
+
+  // Start an animation to show it's on.
+  changeScreen({ [mode]: options });
+}
+
+// Run on every tick, check if we have some state to run.
+let lastCheckTime = getTime();
+function checkSetStateFromSchedule() {
+  const checkTime = getTime();
+  if (lastCheckTime !== checkTime && schedule[checkTime]) {
+    setFromState(schedule[checkTime]);
+    lastCheckTime = checkTime;
+  }
+}
+
 // Handler for running a change, returns a promise that resolves the interval.
 function runScreen(change) {
-  return new Promise((done, fail) => {
+  return new Promise((resolve, fail) => {
+    // Unified rsolve handler for confirming state.
+    function done(intervalID) {
+      updateStateFromChange(change);
+      resolve(intervalID);
+    }
+
     // Stop and clear all.
     if (change.stop) {
       clearScreen();
@@ -208,8 +311,11 @@ function scrollText({
 
 // Bounce a ball around the screen.
 function ballBounce(color) {
-  var p = { x: 5, y: 5 };
-  var velo = 0.1,
+  var p = {
+    x: Math.ceil(Math.random() * 13) + 1,
+    y: Math.ceil(Math.random() * 13) + 1,
+  };
+  var velo = 0.2,
     corner = 50,
     rad = 1;
   var ball = { x: p.x, y: p.y };
@@ -231,7 +337,7 @@ function ballBounce(color) {
     ctx.fill();
     ctx.closePath();
   }
-  return setInterval(DrawMe, 10);
+  return setInterval(DrawMe, FRAME_RATE_TIME);
 }
 
 // Clear the screen.
@@ -248,7 +354,7 @@ function animImage(name) {
   const { fps } = appData.images[name];
 
   return new Promise((done) => {
-    loadImage(`./images/${name}.gif`).then((image) => {
+    loadImage(`${animPath}/${name}_${fps}.gif`).then((image) => {
       const frames = image.width / width;
       let frame = 0;
       const interval = setInterval(() => {
@@ -412,6 +518,7 @@ function setBrightness(level) {
   bLevel = bLevel < 0 ? 0 : bLevel;
 
   brightFrame = [END_FRAME, END_FRAME, bLevel];
+  return bLevel;
 }
 
 // Weave through all pixels on the canvas and generate a byte array for writing.
@@ -461,11 +568,11 @@ function rgbToByte([r, g, b]) {
 // Write the a scanline buffer from canvas to the serialport.
 function sendFrame(port) {
   const buffer = new Buffer.from(getFrameData());
-
+  checkSetStateFromSchedule();
   port.write(buffer, () => {
     setTimeout(() => {
       sendFrame(port);
-    }, Math.round(1000 / FRAME_RATE));
+    }, FRAME_RATE_TIME);
   });
 }
 
@@ -475,10 +582,14 @@ try {
     if (!err) {
       console.log("Connected!");
 
+      // Start sending frames.
       sendFrame(port);
 
-      // Start an animation to show it's on.
-      changeScreen({ ball: "white" });
+      // Setup the state from Global.
+      setFromState(globalState);
+
+      // Read the schedule.
+      readSchedule();
 
       port.on("close", (err) => {
         console.error("Closed!", err);
@@ -513,18 +624,53 @@ app.use("/axios", express.static(`${nm}/axios/dist/`));
 app.use("/images", express.static(`./images/`));
 app.use(express.json());
 
-// Setup single I/O endpoint
+// Data Output (read animations).
 app.get("/data", (req, res) => {
   res.set("Content-Type", "application/json; charset=UTF-8");
   res.send(appData);
 });
 
+// Data Input (change mode).
 app.post("/data", (req, res) => {
   const change = changeScreen(req.body);
   res.send({ status: "ok" });
 });
 
+// Set brightness.
 app.post("/bright", (req, res) => {
-  setBrightness(req.body.brightness);
+  updateStateBrightness(setBrightness(req.body.brightness));
   res.send({ status: "ok" });
+});
+
+// Read schedule state.
+app.get("/schedule", (req, res) => {
+  res.set("Content-Type", "application/json; charset=UTF-8");
+  res.send(schedule);
+});
+
+// Add schedule state.
+app.post("/schedule", (req, res) => {
+  if (req.body.time) {
+    addScheduleState(req.body.time);
+    res.set("Content-Type", "application/json; charset=UTF-8");
+    res.send(schedule);
+  } else {
+    res.send({error: 'Expected "time"'});
+  }
+});
+
+// USE a schedule state.
+app.put("/schedule/:time", (req, res) => {
+  if (schedule[req.params.time]) {
+    setFromState(schedule[req.params.time]);
+  }
+  res.set("Content-Type", "application/json; charset=UTF-8");
+  res.send(schedule);
+});
+
+// Remove schedule item.
+app.delete("/schedule/:time", (req, res) => {
+  removeSchedule(req.params.time);
+  res.set("Content-Type", "application/json; charset=UTF-8");
+  res.send(schedule);
 });
