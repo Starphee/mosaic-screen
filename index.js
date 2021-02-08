@@ -11,6 +11,7 @@ const options = {
 
 const END_FRAME = 255;
 const FRAME_RATE = 60; // In Frame updates per second
+const animPath = path.join(__dirname, 'images', 'animations');
 const width = 15;
 const height = 15;
 let brightFrame = null;
@@ -19,20 +20,17 @@ const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d", { antialias: "none" });
 
 const appData = {
-  images: {
-    heart: { fps: 3 },
-    bird: { fps: 6 },
-    eye: { fps: 10 },
-    flower: { fps: 2 },
-    rainbow: { fps: 24 },
-    fire: { fps: 8 },
-    pumpkin: { fps: 8 },
-    skeleton: { fps: 8 },
-    pickaxe: { fps: 5 },
-    nyan: { fps: 5 },
-    maker: { fps: 8 },
-  },
+  images: {}, // Loaded dynamically.
 };
+
+// Load images.
+const images = fs.readdirSync(animPath);
+images.forEach(file => {
+  const name = file.split('.')[0];
+  const parts = name.split('_');
+  appData.images[parts[0]] = { fps: parts[1]};
+});
+
 
 // Server stuff
 const express = require("express");
