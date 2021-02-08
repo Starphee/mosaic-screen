@@ -19,7 +19,7 @@ const animPath = path.join(__dirname, 'images', 'animations');
 const width = 15;
 const height = 15;
 let brightFrame = null;
-const serverPort = 4242;
+const serverPort = 80;
 const canvas = createCanvas(width, height);
 const ctx = canvas.getContext("2d", { antialias: "none" });
 
